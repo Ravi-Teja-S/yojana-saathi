@@ -3,11 +3,11 @@ import Scheme from '@/models/Scheme'
 
 export async function GET(
   req: Request,
-  { params }: { params: { category: string } }
+  { params }: { params: Promise<{ category: string }> }
 ) {
   await connectDB()
 
-  const { category } = params
+  const { category } = await params
 
   try {
     const schemes = await Scheme.find({ category })
