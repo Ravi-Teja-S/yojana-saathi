@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 // Add LiveKit imports
-import { LiveKitRoom, VoiceAssistantControlBar } from '@livekit/components-react'
-
+// Add this import at the top
+import { LiveKitRoom, VoiceAssistantControlBar, RoomAudioRenderer } from '@livekit/components-react'
 import { Send, StopCircle , Mic } from '@mui/icons-material';
 
 interface Message {
@@ -179,6 +179,7 @@ const SchemeChatbot: React.FC<ChatbotProps> = ({ isOpen, onClose, schemeName }) 
     setVoiceToken(null);
   }}
 >
+  <RoomAudioRenderer />
   <div className="flex flex-col items-center">
     <VoiceAssistantControlBar />
   </div>
@@ -268,3 +269,5 @@ const SchemeChatbot: React.FC<ChatbotProps> = ({ isOpen, onClose, schemeName }) 
 }
 
 export default SchemeChatbot
+
+

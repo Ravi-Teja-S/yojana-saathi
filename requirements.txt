@@ -1,0 +1,3 @@
+livekit-agents[silero,sarvam,turn-detector]>=1.5.0
+astrapy
+python-dotenv

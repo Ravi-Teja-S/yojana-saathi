@@ -14,15 +14,17 @@ const db = client.db(process.env.ASTRA_DB_API_ENDPOINT!, {
 export async function POST(request: NextRequest) {
   try {
     const { query, schemeName } = await request.json();
+    console.log(`[CHATBOT] 📨 Received request | Scheme: "${schemeName}" | Query: "${query}"`);
 
     if (!query || !schemeName) {
+      console.warn('[CHATBOT] ⚠️ Missing query or schemeName in request body');
       return NextResponse.json({ error: 'Missing query or schemeName' }, { status: 400 });
     }
 
     const collection = db.collection("schemes_collection"); 
 
     // 1. PERFORM VECTOR SEARCH
-    // We use "$vectorize": true in projection because that is where your text is stored
+    console.log(`[CHATBOT] 🔍 Starting AstraDB vector search for scheme: "${schemeName}"`);
     const cursor = collection.find(
       { scheme_id: schemeName }, 
       {
@@ -33,25 +35,23 @@ export async function POST(request: NextRequest) {
     );
 
     const documents = await cursor.toArray();
-    
-    // --- CHUNK VERIFICATION LOGS ---
-    console.log(`\n--- 🕵️ RAG VERIFICATION FOR: ${schemeName} ---`);
-    console.log(`✅ Chunks Found: ${documents.length}`);
+    console.log(`[CHATBOT] ✅ AstraDB search complete | Chunks found: ${documents.length}`);
 
     if (documents.length > 0) {
       documents.forEach((doc, index) => {
-        // Accessing the actual text from the $vectorize field
         const textSnippet = doc.$vectorize?.substring(0, 150) || "⚠️ No text in $vectorize";
-        console.log(`📄 CHUNK ${index + 1}: ${textSnippet}...`);
+        console.log(`[CHATBOT] 📄 Chunk ${index + 1}: ${textSnippet}...`);
       });
     } else {
-      console.log("⚠️ WARNING: No documents matched the filter. Check name casing.");
+      console.warn(`[CHATBOT] ⚠️ No documents matched scheme_id: "${schemeName}" — check name casing in DB`);
     }
 
     // 2. PREPARE CONTEXT FOR SARVAM AI
     const contextText = documents.map(doc => doc.$vectorize || "").join('\n\n');
+    console.log(`[CHATBOT] 📝 Context prepared | Total length: ${contextText.length} chars`);
 
     // 3. GENERATE STREAMING RESPONSE
+    console.log('[CHATBOT] 🚀 Calling Sarvam AI (sarvam-30b, stream: true)...');
     const stream = await sarvamClient.chat.completions({
       model: "sarvam-30b", 
       messages: [
@@ -70,20 +70,24 @@ export async function POST(request: NextRequest) {
       temperature: 0.6,
       stream: true,
     });
+    console.log('[CHATBOT] ✅ Sarvam stream opened successfully');
 
     // 4. STREAM TO FRONTEND
     const responseStream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
+        let totalChunks = 0;
         try {
           for await (const chunk of stream) {
             const content = chunk.choices?.[0]?.delta?.content;
             if (content) {
+              totalChunks++;
               controller.enqueue(encoder.encode(content));
             }
           }
+          console.log(`[CHATBOT] ✅ Stream complete | Total chunks sent to client: ${totalChunks}`);
         } catch (err) {
-          console.error("Streaming Error:", err);
+          console.error('[CHATBOT] ❌ Streaming error while reading Sarvam chunks:', err);
         } finally {
           controller.close();
         }
@@ -98,8 +102,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('--- BACKEND ERROR ---');
-    console.error(error);
+    console.error('[CHATBOT] ❌ Unhandled error:', error?.message || error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
