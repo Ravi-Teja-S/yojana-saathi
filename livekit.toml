@@ -1,0 +1,11 @@
+[project]
+subdomain = "aicaller-2oibquhf" # Replace with your actual subdomain
+
+[build]
+# Forces LiveKit to use your custom Dockerfile
+builder = "docker"
+
+[agent]
+name = "yojana-saathi-agent"
+worker_workers = 1
+# 'id' will be added automatically by the CLI after the first 'create'

@@ -1,0 +1,15 @@
+[project]
+name = "yojana-saathi"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "astrapy>=2.2.1",
+    "dotenv>=0.9.9",
+    "livekit>=1.1.7",
+    "livekit-agents>=1.5.8",
+    "livekit-plugins-sarvam>=1.5.8",
+    "livekit-plugins-silero>=1.5.8",
+    "python-dotenv>=1.2.2",
+]

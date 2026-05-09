@@ -52,13 +52,15 @@ const SchemeChatbot: React.FC<ChatbotProps> = ({ isOpen, onClose, schemeName }) 
   const handleVoiceToggle = async () => {
     if (isVoiceMode) {
       setIsVoiceMode(false)
+      setVoiceToken(null)
       return
     }
 
     try {
       setIsLoading(true)
       // Sanitizing the scheme name for the room parameter
-      const roomName = encodeURIComponent(schemeName.replace(/\s+/g, '-'))
+      const uniqueRoomId = `${schemeName.replace(/\s+/g,'-')}-${Date.now()}`
+      const roomName = encodeURIComponent(uniqueRoomId)
       const response = await fetch(`/api/get-voice-token?room=${roomName}&scheme_id=${encodeURIComponent(schemeName)}`)
       const data = await response.json()
       
@@ -269,5 +271,4 @@ const SchemeChatbot: React.FC<ChatbotProps> = ({ isOpen, onClose, schemeName }) 
 }
 
 export default SchemeChatbot
-
 
